@@ -19,6 +19,15 @@ class Game {
         
         // Handle keyboard input
         document.addEventListener('keydown', (e) => this.handleInput(e));
+        
+        // Add touch controls
+        this.touchStartX = null;
+        this.touchStartY = null;
+        
+        // Move touch handlers to document level
+        document.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: false });
+        document.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: false });
+        document.addEventListener('touchend', (e) => this.handleTouchEnd(e), { passive: false });
     }
 
     setupControls() {
@@ -277,6 +286,62 @@ class Game {
                 alert('Congratulations! You\'ve completed all levels!');
             }
         }
+    }
+
+    handleTouchStart(e) {
+        // Don't handle touches that start on buttons
+        if (e.target.tagName === 'BUTTON') return;
+        
+        e.preventDefault();
+        const touch = e.touches[0];
+        this.touchStartX = touch.clientX;
+        this.touchStartY = touch.clientY;
+    }
+
+    handleTouchMove(e) {
+        // Don't handle moves if we didn't start a valid touch
+        if (this.touchStartX !== null && this.touchStartY !== null) {
+            e.preventDefault();
+        }
+    }
+
+    handleTouchEnd(e) {
+        // Don't handle if we didn't start a valid touch
+        if (!this.touchStartX || !this.touchStartY) return;
+        
+        e.preventDefault();
+        const touch = e.changedTouches[0];
+        const deltaX = touch.clientX - this.touchStartX;
+        const deltaY = touch.clientY - this.touchStartY;
+        
+        // Reset touch start positions
+        this.touchStartX = null;
+        this.touchStartY = null;
+
+        // Minimum swipe distance to trigger movement (in pixels)
+        const minSwipeDistance = 30;
+
+        // Determine which direction had the larger movement
+        if (Math.abs(deltaX) > Math.abs(deltaY)) {
+            // Horizontal swipe
+            if (Math.abs(deltaX) > minSwipeDistance) {
+                if (deltaX > 0) {
+                    this.moveBalls(1, 0); // Right
+                } else {
+                    this.moveBalls(-1, 0); // Left
+                }
+            }
+        } else {
+            // Vertical swipe
+            if (Math.abs(deltaY) > minSwipeDistance) {
+                if (deltaY > 0) {
+                    this.moveBalls(0, 1); // Down
+                } else {
+                    this.moveBalls(0, -1); // Up
+                }
+            }
+        }
+        this.checkWinCondition();
     }
 }
 
